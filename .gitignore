@@ -4,5 +4,8 @@
 # Unignore all with extensions
 !*.*
 
+# ignore executable files
+*.out
+
 # Unignore all dirs
 !*/

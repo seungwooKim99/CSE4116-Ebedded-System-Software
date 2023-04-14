@@ -1,0 +1,4 @@
+#ifndef DEVICE_HEADER_INCLUDE
+#define DEVICE_HEADER_INCLUDE
+int tmp2;
+#endif
