@@ -7,8 +7,34 @@ int main(void) {
     open_devices();
 
     /* initialize IPCs */
+    init_shared_memory();
+    init_semaphore();
 
     /* create process with fork */
+    pid_t pid;
+
+    if((pid = fork()) == -1){
+        printf("fork error\n");
+        exit(0);
+    }
     
+    if (pid == 0) { // I/O Process
+        printf("I/O process foked\n");
+        io_process();
+        printf("I/O process done\n");
+    } else {
+        //main process
+        printf("Main process Running\n");
+        main_process();
+        printf("Main process done\n");
+    }
+
     return 0;
+}
+
+int main_process() {
+    semop(sem_id, &p[0], 1);
+    printf("ok read\n");
+    printf("!!%d\n", shmIOtoMainBuffer->control_key);
+    return;
 }

@@ -39,13 +39,14 @@ unsigned char sw_in_buf[SW_MAX_BUTTON];
 // control_key
 #define KEY_RELEASE 0
 #define KEY_PRESS 1
+
 #define HOME 102
 #define BACK 158
 #define RPOG 116
 #define VOL_UP 115
 #define VOL_DOWN 114
 #define CTL_KEY_BUF_SIZE 64
-struct input_event ctl[BUFF_SIZE];
+struct input_event ctl[CTL_KEY_BUF_SIZE];
 
 // led
 #define FPGA_BASE_ADDRESS 0x08000000
