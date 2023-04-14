@@ -1,0 +1,1 @@
+cmd_/home/embe/Desktop/20181610/exercise/s4_1/comm_module/module2.ko := arm-none-linux-gnueabi-ld -EL -r  -T /work/achroimx_kernel/scripts/module-common.lds --build-id  -o /home/embe/Desktop/20181610/exercise/s4_1/comm_module/module2.ko /home/embe/Desktop/20181610/exercise/s4_1/comm_module/module2.o /home/embe/Desktop/20181610/exercise/s4_1/comm_module/module2.mod.o

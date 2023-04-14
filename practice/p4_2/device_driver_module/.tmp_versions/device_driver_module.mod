@@ -1,0 +1,2 @@
+/home/embe/Desktop/20181610/exercise/s4_2/device_driver_module/device_driver_module.ko
+/home/embe/Desktop/20181610/exercise/s4_2/device_driver_module/device_driver_module.o
