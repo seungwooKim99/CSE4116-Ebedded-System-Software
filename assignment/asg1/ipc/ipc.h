@@ -11,8 +11,9 @@ typedef enum _ctl_mode { PUT, GET, MERGE } ctl_mode;
 typedef struct _shmIOtoMain {
     ctl_mode mode;
     unsigned char key[FND_MAX_DIGIT];
-    unsigned char value[SW_MAX_BUTTON];
+    unsigned char value[LCD_MAX_BUFF];
     int control_key;
+    bool request;
 } shmIOtoMain;
 
 shmIOtoMain *shmIOtoMainBuffer;
@@ -22,6 +23,8 @@ int shmIOtoMain_id;
 /* semaphore */
 #define SEM_KEY (key_t) 0x20
 #define SEM_NUMBER 2
+#define READ 0
+#define WRITE 1
 int sem_id;
 union semun {
     int val;

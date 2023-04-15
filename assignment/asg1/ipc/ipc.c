@@ -14,6 +14,7 @@ void init_shared_memory(){
     memset(shmIOtoMainBuffer->key, 0, sizeof(shmIOtoMainBuffer->key));
     memset(shmIOtoMainBuffer->value, 0, sizeof(shmIOtoMainBuffer->value));
     shmIOtoMainBuffer->control_key = 0;
+    shmIOtoMainBuffer->request = false;
     return;
 }
 

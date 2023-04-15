@@ -46,11 +46,13 @@ unsigned char sw_in_buf[SW_MAX_BUTTON];
 #define VOL_UP 115
 #define VOL_DOWN 114
 #define CTL_KEY_BUF_SIZE 64
-struct input_event ctl[CTL_KEY_BUF_SIZE];
+struct input_event ctl_buf[CTL_KEY_BUF_SIZE];
 
 // led
 #define FPGA_BASE_ADDRESS 0x08000000
 #define LED_ADDR 0x16
+#define LED_NUM(n) (int)(1 << (8 - n))
+
 unsigned long *fpga_addr;
 unsigned char *led_addr;
 unsigned char led_out;
@@ -62,5 +64,23 @@ int device_fds[MAX_DEVICE_NUMBER];
 void open_devices();
 void init_devices();
 
+/* LED (mmap)*/
+pthread_t toggle_tid;
+void write_led();
+
+/* FND */
+void write_fnd();
+
+/* LCD */
+void write_lcd();
+
+/* SWITCH */
+void read_switch();
+
+/* MOTOR */
+void write_motor();
+
+/* CONTROL_KEY */
+void read_control_key();
 
 #endif

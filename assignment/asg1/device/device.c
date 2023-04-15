@@ -23,7 +23,7 @@ void open_devices(){
                 device_fds[device_num] = open(FPGA_STEP_MOTOR_DEVICE, O_WRONLY);
                 break;
             case CONTROL_KEY:
-                device_fds[device_num] = open(CONTROL_KEY_DEVICE, O_RDONLY);
+                device_fds[device_num] = open(CONTROL_KEY_DEVICE, O_RDONLY | O_NONBLOCK);
                 break;
             case MMAP:
                 device_fds[device_num] = open(MMAP_DEVICE, O_RDWR | O_SYNC);
@@ -44,3 +44,79 @@ void open_devices(){
     led_addr = (unsigned char *)((void *)fpga_addr + LED_ADDR);
     return;
 }
+
+/* LED (mmap)*/
+void write_led(int num) {
+    *led_addr = LED_NUM(num);
+    return;
+}
+
+void *pthread_toggle_led(void *arg) {
+    bool is_key_input = (bool)arg;
+    if (is_key_input) {
+        while(true){
+            write_led(3);
+            usleep(1000000);
+            write_led(4);
+            usleep(1000000);
+        }
+    } else {
+        while(true){
+            write_led(7);
+            usleep(1000000);
+            write_led(8);
+            usleep(1000000);
+        }
+    }
+
+}
+
+void toggle_led(bool is_key_input) {
+    pthread_create((&toggle_tid),NULL,pthread_toggle_led,(void*)is_key_input);
+    return;
+}
+
+void stop_toggle_led() {
+    pthread_cancel(toggle_tid);
+    return;
+}
+
+
+/* FND */
+void write_fnd(unsigned char *buf) {
+    unsigned char retval;
+    unsigned char copy_buf[FND_MAX_DIGIT] = {0,};
+    strcpy(copy_buf, buf);
+    printf("[%d] [%d] [%d] [%d]\n", buf[0], buf[1], buf[2], buf[3]);
+    int i = 0;
+    for(i = 0 ; i < FND_MAX_DIGIT; i++) {
+        copy_buf[0] -= FND_OFFSET;
+    }
+    if((retval = write(device_fds[FND], &copy_buf, 4)) < 0) {
+        printf("fnd write error\n");
+    }
+    return;
+}
+
+
+/* LCD */
+
+/* SWITCH */
+void read_switch() {
+    unsigned char retval;
+    if((retval = read(device_fds[SWITCH], &sw_in_buf, sizeof(sw_in_buf))) < 0) {
+        printf("switch read error\n");
+    }
+    return;
+}
+
+/* MOTOR */
+
+/* CONTROL_KEY (NON_BLOCK) */
+void read_control_key() {
+    unsigned char retval;
+    if((retval = read(device_fds[CONTROL_KEY], &ctl_buf, sizeof(ctl_buf))) < 0){
+        printf("key read error\n");
+    }
+    return;
+};
