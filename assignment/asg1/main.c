@@ -22,19 +22,20 @@ int main(void) {
         printf("I/O process foked\n");
         io_process();
         printf("I/O process done\n");
-    } else {
-        //main process
-        printf("Main process Running\n");
-        main_process();
-        printf("Main process done\n");
+        exit(1);
     }
-
+    //main process
+    printf("Main process Running\n");
+    while(true) {
+        semop(sem_id, &p[READ], 1);
+        main_process();
+        semop(sem_id, &v[WRITE], 1);
+    }
+    printf("Main process done\n");
     return 0;
 }
 
 int main_process() {
-    semop(sem_id, &p[0], 1);
-    printf("ok read\n");
-    printf("!!%d\n", shmIOtoMainBuffer->control_key);
+    int i;
     return;
 }
