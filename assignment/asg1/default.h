@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include <pthread.h>
 #include <ctype.h>
 #include <sys/select.h>
 #include <unistd.h>
