@@ -8,7 +8,7 @@ typedef struct _local_IO_buffer {
     _input_mode input_mode;
     unsigned char key[FND_MAX_DIGIT];
     int key_idx;
-    unsigned char value[SW_MAX_BUTTON];
+    unsigned char value[LCD_MAX_BUFF];
     int value_idx;
 } local_IO_buffer;
 

@@ -28,7 +28,7 @@ unsigned char fnd_out_buf[FND_MAX_DIGIT];
 // text lcd
 #define LCD_MAX_BUFF 32
 #define LCD_LINE_BUFF 16
-unsigned char lcd_out_buf[LCD_LINE_BUFF];
+unsigned char lcd_out_buf[LCD_MAX_BUFF];
 
 // switch
 #define SW_MAX_BUTTON 9

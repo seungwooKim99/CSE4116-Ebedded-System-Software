@@ -47,7 +47,7 @@ bool is_reset_pressed() {
     return true;
 }
 
-/* buffer operations */
+/* switch buffer operations */
 unsigned char get_character() {
     return;
 }
@@ -66,14 +66,9 @@ unsigned char get_number() {
 /* mode */
 void put(){
     int i;
-    // if((!is_switch_pressed()) && (is_buffer_empty(true))) {
-    //     // not pressed and buffer's empty -> pending input
-    //     printf("pending\n");
-    //     return;
-    // }
-
+    bool is_key_input;
     unsigned char num;
-    if(is_switch_pressed()) {
+    if(is_switch_pressed() && (io_buf->input_mode == PENDING)) {
         io_buf->input_mode = KEY;
     }
     switch(io_buf->input_mode) {
@@ -81,14 +76,17 @@ void put(){
             write_led(1);
             break;
         case KEY:
+            is_key_input = true;
             if (!is_led_toggling){
-                toggle_led(true); // create thread to toggle led concurrently
+                toggle_led(is_key_input); // create thread to toggle led concurrently
                 is_led_toggling = true;
             }
 
-            if ((is_reset_pressed()) && (!is_buffer_empty(true))) {
+            if ((is_reset_pressed()) && (!is_buffer_empty(is_key_input))) {
+                // change Key input mode to Value input mode
                 io_buf->input_mode = VALUE;
                 stop_toggle_led();
+                is_led_toggling = false;
                 break;
             }
 
@@ -104,6 +102,32 @@ void put(){
             write_fnd(io_buf->key);
             break;
         case VALUE:
+            is_key_input = false;
+            if (!is_led_toggling){
+                printf("toggle led\n");
+                toggle_led(is_key_input); // create thread to toggle led concurrently
+                is_led_toggling = true;
+            }
+            if ((is_reset_pressed()) && (!is_buffer_empty(is_key_input))) {
+                printf("chg mode\n");
+                io_buf->input_mode = KEY;
+                stop_toggle_led();
+                is_led_toggling = false;
+                break;
+            }
+
+            if ((num = get_number()) == 0){
+                // no input (waiting for input)
+                break;
+            }
+            printf("num: %d\n", num);
+
+            /* write on local memory buffer */
+            io_buf->value[io_buf->value_idx++] = num + '0';
+            if (io_buf->value_idx == LCD_MAX_BUFF) io_buf->value_idx--;
+
+            /* write on LCD */
+            write_lcd(io_buf->value);
             break;
     }
 
@@ -118,7 +142,7 @@ void init_local_io_buffer() {
     io_buf = (local_IO_buffer *)malloc(sizeof(local_IO_buffer));
     io_buf->input_mode = PENDING;
     memset(io_buf->key, 0, sizeof(io_buf->key));
-    memset(io_buf->value, 0, sizeof(io_buf->value));
+    memset(io_buf->value, ' ', sizeof(io_buf->value));
     io_buf->key_idx = 0;
     io_buf->value_idx = 0;
 

@@ -87,8 +87,7 @@ void write_fnd(unsigned char *buf) {
     unsigned char retval;
     unsigned char copy_buf[FND_MAX_DIGIT] = {0,};
     strcpy(copy_buf, buf);
-    printf("[%d] [%d] [%d] [%d]\n", buf[0], buf[1], buf[2], buf[3]);
-    int i = 0;
+    int i;
     for(i = 0 ; i < FND_MAX_DIGIT; i++) {
         copy_buf[0] -= FND_OFFSET;
     }
@@ -100,6 +99,13 @@ void write_fnd(unsigned char *buf) {
 
 
 /* LCD */
+void write_lcd(unsigned char *buf) {
+    unsigned char retval;
+    if((retval = write(device_fds[LCD], buf, LCD_MAX_BUFF)) < 0) {
+        printf("lcd write error\n");
+    };
+    return;
+}
 
 /* SWITCH */
 void read_switch() {
