@@ -37,5 +37,22 @@ int main(void) {
 
 int main_process() {
     int i;
+    if (shmIOtoMainBuffer->request) {
+        printf("request recieved!: ");
+        switch(shmIOtoMainBuffer->mode) {
+            case PUT:
+                printf("PUT\n");
+                break;
+            case GET:
+                printf("GET\n");
+                break;
+            case MERGE:
+                printf("MERGE\n");
+                break;
+            default:
+                printf("something's wrong!\n");
+                break;
+        }
+    }
     return;
 }

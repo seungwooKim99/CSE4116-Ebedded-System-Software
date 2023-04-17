@@ -86,10 +86,21 @@ void stop_toggle_led() {
 void write_fnd(unsigned char *buf) {
     unsigned char retval;
     unsigned char copy_buf[FND_MAX_DIGIT] = {0,};
-    strcpy(copy_buf, buf);
+
+    //strcpy(copy_buf, buf);
     int i;
+    int digit_num = 0;
+
+    // count digit number
+    for (i = 0; i < FND_MAX_DIGIT; i++) {
+        if (buf[i] != 0) digit_num++;
+    }
     for(i = 0 ; i < FND_MAX_DIGIT; i++) {
         copy_buf[0] -= FND_OFFSET;
+    }
+    int tmp = 0;
+    for (i = FND_MAX_DIGIT - digit_num ; i < FND_MAX_DIGIT ; i++) {
+        copy_buf[i] += buf[tmp++];
     }
     if((retval = write(device_fds[FND], &copy_buf, 4)) < 0) {
         printf("fnd write error\n");
