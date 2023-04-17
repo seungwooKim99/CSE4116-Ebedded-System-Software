@@ -12,9 +12,27 @@ void init_shared_memory(){
     /* init */
     shmIOtoMainBuffer->mode = PUT;
     memset(shmIOtoMainBuffer->key, 0, sizeof(shmIOtoMainBuffer->key));
-    memset(shmIOtoMainBuffer->value, 0, sizeof(shmIOtoMainBuffer->value));
+    memset(shmIOtoMainBuffer->value, ' ', sizeof(shmIOtoMainBuffer->value));
     shmIOtoMainBuffer->control_key = 0;
     shmIOtoMainBuffer->request = false;
+
+    /* KVS */
+    kvs_id = shmget(SHM_KEY_2, sizeof(shmKVS), IPC_CREAT);
+    if (kvs_id == -1) {
+        printf("shmget error\n");
+        exit(0);
+    }
+    kvs = shmat(kvs_id, 0, 0);
+
+    /* init */
+    int i;
+    kvs->num = 0;
+    for(i=0;i<MAX_KVS_NUMBER;i++){
+        memset(kvs->keys[i], 0, sizeof(kvs->keys[i]));
+        memset(kvs->values[i], ' ', sizeof(kvs->values[i]));
+    }
+    kvs->get_request_idx = -1;
+
     return;
 }
 

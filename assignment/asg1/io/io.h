@@ -17,4 +17,7 @@ typedef struct _local_IO_buffer {
 bool is_led_toggling;
 
 local_IO_buffer *io_buf;
+
+/* function prototypes */
+void flush_all_devices();
 #endif

@@ -35,16 +35,81 @@ int main(void) {
     return 0;
 }
 
+void resolve_put() {
+    int num = kvs->num;
+    if (num == MAX_KVS_NUMBER) {
+        printf("somethings wrong! kvs is full\n");
+        return;
+    }
+
+    strcpy(kvs->keys[num], shmIOtoMainBuffer->key);
+    strcpy(kvs->values[num], shmIOtoMainBuffer->value);
+    kvs->num++;
+    return;
+}
+
+void resolve_get() {
+    int num = kvs->num;
+    int i, j;
+    printf("num : %d\n", num);
+    if (num == 0) {
+        // kvs is empty. key not found.
+        printf("empty\n");
+        kvs->get_request_idx = -1;
+        return;
+    }
+    printf("---\n");
+    // for(i = 0 ; i < num ; i++){
+    //     // compare key
+    //     printf("in loop\n");
+    //     bool found = true;
+    //     for(j=0;j<FND_MAX_DIGIT;i++) {
+    //         printf("j = %d\n", j);
+    //         if (kvs->keys[i][j] != shmIOtoMainBuffer->key[i]) found = false;
+    //     }
+    //     if (found){
+    //         // key found
+    //         printf("found\n");
+    //         kvs->get_request_idx = i;
+    //         return;
+    //     }
+    // }
+    // key not found.
+    for(i=0;i<num;i++){
+        printf("cmp : %d\n", strcmp(kvs->keys[i], shmIOtoMainBuffer->key));
+        if (strcmp(kvs->keys[i], shmIOtoMainBuffer->key) == 0){
+            printf("FOUND!\n");
+            kvs->get_request_idx = i;
+            return;
+        }
+
+    }
+    printf("not found\n");
+    kvs->get_request_idx = -1;
+    return;
+}
+
+void resolve_merge() {
+    return;
+}
+
 int main_process() {
     int i;
+    printf("main: key_num : %d\n", kvs->num);
     if (shmIOtoMainBuffer->request) {
         printf("request recieved!: ");
         switch(shmIOtoMainBuffer->mode) {
             case PUT:
-                printf("PUT\n");
+                if (kvs->num == MAX_KVS_NUMBER) {
+                    // KVS is full. merge before PUT.
+                    printf("KVS is full\n");
+                    resolve_merge();
+                }
+                resolve_put();
                 break;
             case GET:
                 printf("GET\n");
+                resolve_get();
                 break;
             case MERGE:
                 printf("MERGE\n");

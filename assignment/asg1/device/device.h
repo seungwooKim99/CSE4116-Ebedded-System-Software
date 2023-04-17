@@ -42,7 +42,7 @@ unsigned char sw_in_buf[SW_MAX_BUTTON];
 
 #define HOME 102
 #define BACK 158
-#define RPOG 116
+#define PROG 116
 #define VOL_UP 115
 #define VOL_DOWN 114
 #define CTL_KEY_BUF_SIZE 64
