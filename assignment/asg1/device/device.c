@@ -83,24 +83,18 @@ void stop_toggle_led() {
 
 
 /* FND */
-void write_fnd(unsigned char *buf) {
+void write_fnd(int num) {
     unsigned char retval;
-    unsigned char copy_buf[FND_MAX_DIGIT] = {0,};
+    unsigned char copy_buf[FND_MAX_DIGIT + 1] = {'\0'};
 
     //strcpy(copy_buf, buf);
     int i;
-    int digit_num = 0;
+    int base = 1;
 
     // count digit number
-    for (i = 0; i < FND_MAX_DIGIT; i++) {
-        if (buf[i] != 0) digit_num++;
-    }
-    for(i = 0 ; i < FND_MAX_DIGIT; i++) {
-        copy_buf[0] -= FND_OFFSET;
-    }
-    int tmp = 0;
-    for (i = FND_MAX_DIGIT - digit_num ; i < FND_MAX_DIGIT ; i++) {
-        copy_buf[i] += buf[tmp++];
+    for (i=FND_MAX_DIGIT - 1 ; i >= 0 ; i--){
+        copy_buf[i] = (num/base) % 10;
+        base *= 10;
     }
     if((retval = write(device_fds[FND], &copy_buf, 4)) < 0) {
         printf("fnd write error\n");
@@ -110,9 +104,20 @@ void write_fnd(unsigned char *buf) {
 
 
 /* LCD */
-void write_lcd(unsigned char *buf) {
+void write_lcd(char *buf) {
     unsigned char retval;
-    if((retval = write(device_fds[LCD], buf, LCD_MAX_BUFF)) < 0) {
+    char processed[LCD_MAX_BUFF + 1] = {'\0'};
+    int dataLength = strlen(buf);
+
+    if (dataLength > LCD_MAX_BUFF) {
+        printf("error! length exceed\n");
+        dataLength = LCD_MAX_BUFF;
+    }
+
+    strncpy(processed, buf, LCD_MAX_BUFF);
+    memset(processed + dataLength, ' ', LCD_MAX_BUFF - dataLength);
+
+    if((retval = write(device_fds[LCD], processed, LCD_MAX_BUFF)) < 0) {
         printf("lcd write error\n");
     };
     return;

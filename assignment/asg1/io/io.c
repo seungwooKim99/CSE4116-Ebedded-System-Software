@@ -6,15 +6,26 @@ const char switch_keypad[][3] = {
     "PRS", "TUV", "WXY" 
 };
 
+/* util function */
+// int power(int x,int n)
+// {
+//    if(n==0)
+//      return 1;
+//    else if(n%2==0)
+//      return power(x*x,n/2);
+//    else
+//      return x*power(x*x,(n-1)/2);
+// }
+
 /* switch input */
 
 void flush_buffer(bool is_key_buffer) {
     if (is_key_buffer){
-        memset(io_buf->key, 0,sizeof(io_buf->key));
-        io_buf->key_idx = 0;
+        io_buf->key = 0;
+        io_buf->key_digit = 0;
         return;
     }
-    memset(io_buf->value, ' ',sizeof(io_buf->value));
+    memset(io_buf->value, 0,sizeof(io_buf->value));
     io_buf->value_idx = 0;
     return;
 }
@@ -22,13 +33,11 @@ void flush_buffer(bool is_key_buffer) {
 bool is_buffer_empty(bool is_key_buffer) {
     int i;
     if (is_key_buffer) {
-        for(i=0;i<FND_MAX_DIGIT;i++) {
-            if (io_buf->key[i] != 0) return false;
-        }
-        return true;
+        if(io_buf->key == 0) return true;
+        return false;
     }
     for(i=0;i<SW_MAX_BUTTON;i++) {
-        if (io_buf->value[i] != ' ') return false;
+        if (io_buf->value[i] != 0) return false;
     }
     return true;
 }
@@ -57,7 +66,7 @@ int get_latest_value_idx() {
         return 0;
     }
     int latest_idx = io_buf->value_idx - 1;
-    if (io_buf->value[io_buf->value_idx] != ' ') {
+    if (io_buf->value[io_buf->value_idx] != 0) {
         // buffer is full. last character is 'io_buf->value_idx'
         latest_idx++;
     }
@@ -70,7 +79,7 @@ bool is_same_char_btn_pressed() {
         return false;
     }
     int prev_idx = io_buf->value_idx - 1;
-    if (io_buf->value[io_buf->value_idx] != ' ') {
+    if (io_buf->value[io_buf->value_idx] != 0) {
         // buffer is full. last character is 'io_buf->value_idx'
         prev_idx++;
     }
@@ -137,14 +146,14 @@ unsigned char set_character() {
     return;
 }
 
-unsigned char get_number() {
+int get_number() {
     int i;
     for(i=0;i<SW_MAX_BUTTON;i++) {
         if (sw_in_buf[i] == 1){
-            return (unsigned char)(i+1);
+            return (int)(i+1);
         }
     }
-    return (unsigned char)0;
+    return 0;
 }
 
 bool is_same_input(unsigned char *buf) {
@@ -199,50 +208,6 @@ switch_input_type get_switch_input_type() {
     return NONE;
 }
 
-void result_lcd_string(unsigned char *buf){
-    int i;
-    int idx = kvs->num - 1;
-    int key_size = 0, value_size = 0, str_size = 0;
-    for(i=0;i<FND_MAX_DIGIT;i++){
-        if (kvs->keys[idx][i] == 0) break;
-        printf("%d %x %c\n", kvs->keys[idx][i],kvs->keys[idx][i],kvs->keys[idx][i]);
-        key_size++;
-    }
-
-    for(i=0;i<LCD_MAX_BUFF;i++) {
-        if (kvs->values[idx][i] == ' ') break;
-        value_size++;
-    }
-    printf("value_size: %d / key_size: %d\n", value_size, key_size);
-    memset(buf, 0, LCD_MAX_BUFF);
-
-    unsigned char tmp_key_buf[FND_MAX_DIGIT] = {};
-    for (i = 0 ; i < key_size ; i++) {
-        tmp_key_buf[i] = kvs->keys[idx][i];
-    }
-
-    buf[str_size++] = '(';
-
-    // number
-    buf[str_size++] = (kvs->num) + '0';
-    buf[str_size++] = ',';
-    buf[str_size++] = ' ';
-
-    for(i=0;i<key_size;i++){
-        buf[str_size++] = kvs->keys[idx][i] + '0';
-    }
-
-    buf[str_size++] = ',';
-    buf[str_size++] = ' ';
-    buf[str_size] = 0;
-
-    strcat(buf, kvs->values[idx]);
-    str_size += value_size;
-    buf[str_size++] = ')';
-    memset(buf+str_size, ' ', LCD_MAX_BUFF - str_size);
-    return;
-}
-
 /* mode */
 
 void get() {
@@ -266,13 +231,15 @@ void get() {
             /* if GET Request done */
             if(shmIOtoMainBuffer->request) {
                 shmIOtoMainBuffer->request = false; // GET done
-                unsigned char result_lcd_buf[LCD_MAX_BUFF];
+                unsigned char result_lcd_buf[LCD_MAX_BUFF] = {'\0'};
+                int idx = kvs->num - 1;
 
                 if (kvs->get_request_idx == -1){ // key not found
                     strcpy(result_lcd_buf, "Error");
-                    memset(result_lcd_buf+5,' ',LCD_MAX_BUFF-5);
                 } else {
-                    result_lcd_string(result_lcd_buf);
+                    //result_lcd_string(result_lcd_buf);
+                    sprintf(result_lcd_buf, "(%d, %d, %s)", kvs->num, kvs->keys[idx], kvs->values[idx]);
+                    //sprintf(result_lcd_buf, "(1, 123, asd)");
                 }
                 write_lcd(result_lcd_buf);
 
@@ -289,12 +256,13 @@ void get() {
                 io_buf->input_mode = PENDING;
                 flush_all_devices();
                 printf("out\n");
-                return;
             }
-
-            unsigned char num;
+            printf("switch\n");
+            int num;
+            int base = 1;
             switch(get_switch_input_type()) {
                 case NONE:
+                    printf("none\n");
                     break;
                 case SINGLE:
                     if ((num = get_number()) == 0){
@@ -302,8 +270,12 @@ void get() {
                         break;
                     }
                     /* write on local memory buffer */
-                    io_buf->key[io_buf->key_idx++] = num;
-                    if (io_buf->key_idx == FND_MAX_DIGIT) io_buf->key_idx--;
+                    if (io_buf->key_digit == FND_MAX_DIGIT) {
+                        io_buf->key = (io_buf->key / 10) * 10 + num;
+                    } else {
+                        io_buf->key = (io_buf->key)*10 + num;
+                        io_buf->key_digit++;
+                    }
                     
                     /* write on FND */
                     write_fnd(io_buf->key);
@@ -312,7 +284,7 @@ void get() {
                     // GET request to main with IPC
                     if (!is_buffer_empty(is_key_input)) { // key buffer must not be empty
                         stop_toggle_led();
-                        strcpy(shmIOtoMainBuffer->key, io_buf->key);
+                        shmIOtoMainBuffer->key = io_buf->key;
                         shmIOtoMainBuffer->request = true; // announce PUT request to main process
                     }
                     break;
@@ -334,8 +306,11 @@ void put(){
     /* if PUT Request done */
     if(shmIOtoMainBuffer->request) {
         shmIOtoMainBuffer->request = false; // PUT done
-        unsigned char result_lcd_buf[LCD_MAX_BUFF];
+        char result_lcd_buf[LCD_MAX_BUFF]= {'\0'};
+        int idx = kvs->num - 1;
         //result_lcd_string(result_lcd_buf);
+        sprintf(result_lcd_buf, "(%d, %d, %s)", kvs->num, kvs->keys[idx], kvs->values[idx]);
+        //sprintf(result_lcd_buf, "(1, 221, ksw)");
         write_lcd(result_lcd_buf);
 
         // /* stop toggle led */
@@ -365,7 +340,7 @@ void put(){
                 is_led_toggling = true;
             }
 
-            unsigned char num;
+            int num;
             switch(get_switch_input_type()) {
                 case NONE:
                     break;
@@ -375,9 +350,14 @@ void put(){
                         break;
                     }
                     /* write on local memory buffer */
-                    io_buf->key[io_buf->key_idx++] = num;
-                    if (io_buf->key_idx == FND_MAX_DIGIT) io_buf->key_idx--;
                     
+                    if (io_buf->key_digit == FND_MAX_DIGIT) {
+                        io_buf->key = (io_buf->key / 10) * 10 + num;
+                    } else {
+                        io_buf->key = (io_buf->key)*10 + num;
+                        io_buf->key_digit++;
+                    }
+                    printf("num : %d/key: %d/:key_digit: %d\n", num, io_buf->key, io_buf->key_digit);
                     /* write on FND */
                     write_fnd(io_buf->key);
                     break;
@@ -400,7 +380,11 @@ void put(){
                     // key, value buffer must be not empty
                     if (!is_buffer_empty(true) && !is_buffer_empty(false)) {
                         // PUT request to main with IPC
-                        strcpy(shmIOtoMainBuffer->key, io_buf->key);
+                        // for(i=0 ;i <FND_MAX_DIGIT;i++) {
+                        //     shmIOtoMainBuffer->key[i] = i;
+                        // }
+                        shmIOtoMainBuffer->key = io_buf->key;
+                        //strcpy(shmIOtoMainBuffer->key, io_buf->key);
                         strcpy(shmIOtoMainBuffer->value, io_buf->value);
                         shmIOtoMainBuffer->request = true; // announce PUT request to main process
                     }
@@ -453,7 +437,8 @@ void put(){
                     // key, value buffer must be not empty
                     if (!is_buffer_empty(true) && !is_buffer_empty(false)) {
                         // PUT request to main with IPC
-                        strcpy(shmIOtoMainBuffer->key, io_buf->key);
+                        //strcpy(shmIOtoMainBuffer->key, io_buf->key);
+                        shmIOtoMainBuffer->key = io_buf->key;
                         strcpy(shmIOtoMainBuffer->value, io_buf->value);
                         shmIOtoMainBuffer->request = true; // announce PUT request to main process
                     }
@@ -472,9 +457,9 @@ void init_local_io_buffer() {
     /* init */
     io_buf = (local_IO_buffer *)malloc(sizeof(local_IO_buffer));
     io_buf->input_mode = PENDING;
-    memset(io_buf->key, 0, sizeof(io_buf->key));
-    memset(io_buf->value, ' ', sizeof(io_buf->value));
-    io_buf->key_idx = 0;
+    io_buf->key = 0;
+    memset(io_buf->value, 0, sizeof(io_buf->value));
+    io_buf->key_digit = 0;
     io_buf->value_idx = 0;
     io_buf->number_value_enter = false;
 
@@ -541,6 +526,7 @@ void io_process() {
                 break;
             case GET:
                 get();
+                printf("get done\n");
                 break;
             case MERGE:
                 break;
@@ -549,7 +535,7 @@ void io_process() {
                 exit(0);
                 break;
         }
-        
+        printf("sleep 150000\n");
         usleep(150000); //sleep for 0.15s
         semop(sem_id, &v[READ], 1);
         semop(sem_id, &p[WRITE], 1);

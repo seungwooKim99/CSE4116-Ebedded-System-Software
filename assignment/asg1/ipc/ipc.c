@@ -11,8 +11,8 @@ void init_shared_memory(){
 
     /* init */
     shmIOtoMainBuffer->mode = PUT;
-    memset(shmIOtoMainBuffer->key, 0, sizeof(shmIOtoMainBuffer->key));
-    memset(shmIOtoMainBuffer->value, ' ', sizeof(shmIOtoMainBuffer->value));
+    shmIOtoMainBuffer->key = 0;
+    memset(shmIOtoMainBuffer->value, 0, sizeof(shmIOtoMainBuffer->value));
     shmIOtoMainBuffer->control_key = 0;
     shmIOtoMainBuffer->request = false;
 
@@ -28,8 +28,8 @@ void init_shared_memory(){
     int i;
     kvs->num = 0;
     for(i=0;i<MAX_KVS_NUMBER;i++){
-        memset(kvs->keys[i], 0, sizeof(kvs->keys[i]));
-        memset(kvs->values[i], ' ', sizeof(kvs->values[i]));
+        kvs->keys[i] = 0;
+        memset(kvs->values[i], 0, sizeof(kvs->values[i]));
     }
     kvs->get_request_idx = -1;
 

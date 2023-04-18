@@ -11,8 +11,8 @@ typedef enum _ctl_mode { PUT, GET, MERGE } ctl_mode;
 /* I/O -> main */
 typedef struct _shmIOtoMain {
     ctl_mode mode;
-    unsigned char key[FND_MAX_DIGIT];
-    unsigned char value[LCD_MAX_BUFF];
+    int key;
+    char value[LCD_MAX_BUFF];
     int control_key;
     bool request;
 } shmIOtoMain;
@@ -21,8 +21,8 @@ typedef struct _shmIOtoMain {
 #define MAX_KVS_NUMBER 3
 typedef struct _shmKVS {
     int num;
-    unsigned char keys[MAX_KVS_NUMBER][FND_MAX_DIGIT];
-    unsigned char values[MAX_KVS_NUMBER][LCD_MAX_BUFF];
+    int keys[MAX_KVS_NUMBER];
+    char values[MAX_KVS_NUMBER][LCD_MAX_BUFF];
     int get_request_idx;
 } shmKVS;
 

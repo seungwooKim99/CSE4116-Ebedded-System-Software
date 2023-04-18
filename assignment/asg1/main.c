@@ -41,8 +41,7 @@ void resolve_put() {
         printf("somethings wrong! kvs is full\n");
         return;
     }
-
-    strcpy(kvs->keys[num], shmIOtoMainBuffer->key);
+    kvs->keys[num] = shmIOtoMainBuffer->key;
     strcpy(kvs->values[num], shmIOtoMainBuffer->value);
     kvs->num++;
     return;
@@ -51,40 +50,21 @@ void resolve_put() {
 void resolve_get() {
     int num = kvs->num;
     int i, j;
-    printf("num : %d\n", num);
     if (num == 0) {
         // kvs is empty. key not found.
         printf("empty\n");
         kvs->get_request_idx = -1;
         return;
     }
-    printf("---\n");
-    // for(i = 0 ; i < num ; i++){
-    //     // compare key
-    //     printf("in loop\n");
-    //     bool found = true;
-    //     for(j=0;j<FND_MAX_DIGIT;i++) {
-    //         printf("j = %d\n", j);
-    //         if (kvs->keys[i][j] != shmIOtoMainBuffer->key[i]) found = false;
-    //     }
-    //     if (found){
-    //         // key found
-    //         printf("found\n");
-    //         kvs->get_request_idx = i;
-    //         return;
-    //     }
-    // }
+
     // key not found.
     for(i=0;i<num;i++){
-        printf("cmp : %d\n", strcmp(kvs->keys[i], shmIOtoMainBuffer->key));
-        if (strcmp(kvs->keys[i], shmIOtoMainBuffer->key) == 0){
-            printf("FOUND!\n");
+        if (kvs->keys[i] == shmIOtoMainBuffer->key){
             kvs->get_request_idx = i;
             return;
         }
 
     }
-    printf("not found\n");
     kvs->get_request_idx = -1;
     return;
 }
@@ -95,7 +75,6 @@ void resolve_merge() {
 
 int main_process() {
     int i;
-    printf("main: key_num : %d\n", kvs->num);
     if (shmIOtoMainBuffer->request) {
         printf("request recieved!: ");
         switch(shmIOtoMainBuffer->mode) {
@@ -108,7 +87,6 @@ int main_process() {
                 resolve_put();
                 break;
             case GET:
-                printf("GET\n");
                 resolve_get();
                 break;
             case MERGE:
