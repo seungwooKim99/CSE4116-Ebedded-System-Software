@@ -18,12 +18,27 @@ int main(void) {
         exit(0);
     }
     
-    if (pid == 0) { // I/O Process
+    /* I/O process */
+    if (pid == 0) {
         printf("I/O process foked\n");
         io_process();
         printf("I/O process done\n");
         exit(1);
     }
+
+    if((pid = fork()) == -1){
+        printf("fork error\n");
+        exit(0);
+    }
+
+    /* Merge process */
+    if (pid == 0) {
+        printf("Merge process foked\n");
+        merge_process();
+        printf("Merge process done\n");
+        exit(1);
+    }
+
     //main process
     printf("Main process Running\n");
     while(true) {
@@ -37,13 +52,15 @@ int main(void) {
 
 void resolve_put() {
     int num = kvs->num;
+    printf("resolve_put kvs->num: %d\n", num);
     if (num == MAX_KVS_NUMBER) {
-        printf("somethings wrong! kvs is full\n");
+        printf("ERROR! KVS IS FULL (MAIN:RESOLVE_PUT)\n");
         return;
     }
     kvs->keys[num] = shmIOtoMainBuffer->key;
     strcpy(kvs->values[num], shmIOtoMainBuffer->value);
     kvs->num++;
+    //kvs->request_done = true;
     return;
 }
 
@@ -69,28 +86,23 @@ void resolve_get() {
     return;
 }
 
-void resolve_merge() {
-    return;
-}
-
 int main_process() {
     int i;
+    printf("main : %d\n", kvs->num);
     if (shmIOtoMainBuffer->request) {
-        printf("request recieved!: ");
         switch(shmIOtoMainBuffer->mode) {
             case PUT:
                 if (kvs->num == MAX_KVS_NUMBER) {
                     // KVS is full. merge before PUT.
-                    printf("KVS is full\n");
-                    resolve_merge();
+                    //printf("something's wrong. KVS is full\n");
+                    kvs->is_full = true;
+                    break;
                 }
                 resolve_put();
+                printf("resolved\n");
                 break;
             case GET:
                 resolve_get();
-                break;
-            case MERGE:
-                printf("MERGE\n");
                 break;
             default:
                 printf("something's wrong!\n");

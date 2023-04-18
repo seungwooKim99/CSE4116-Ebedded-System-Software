@@ -303,8 +303,24 @@ void put(){
         io_buf->input_mode = KEY;
     }
 
+    /* KVS is full */
+    if(kvs->is_full) {
+        printf("FULL![IO]\n");
+        shm_merge->request = REQ_FLUSH;
+        shm_merge->num = kvs->num;
+        for(i=0;i<MAX_KVS_NUMBER;i++) {
+            shm_merge->keys[i] = kvs->keys[i];
+            strcpy(shm_merge->values[i], kvs->values[i]);
+        }
+        semop(sem_kvs_id, &p_kvs[0], 1);
+        printf("FULL RESOLVED[IO]\n");
+        return;
+    }
+
     /* if PUT Request done */
     if(shmIOtoMainBuffer->request) {
+        //kvs->request_done = false;
+        printf("PUT DONE\n");
         shmIOtoMainBuffer->request = false; // PUT done
         char result_lcd_buf[LCD_MAX_BUFF]= {'\0'};
         int idx = kvs->num - 1;
@@ -387,6 +403,7 @@ void put(){
                         //strcpy(shmIOtoMainBuffer->key, io_buf->key);
                         strcpy(shmIOtoMainBuffer->value, io_buf->value);
                         shmIOtoMainBuffer->request = true; // announce PUT request to main process
+                        printf("request go from IO\n");
                     }
                     break;
                 default:
@@ -441,6 +458,7 @@ void put(){
                         shmIOtoMainBuffer->key = io_buf->key;
                         strcpy(shmIOtoMainBuffer->value, io_buf->value);
                         shmIOtoMainBuffer->request = true; // announce PUT request to main process
+                        printf("request go from IO\n");
                     }
                     break;
                 default:
@@ -519,9 +537,21 @@ void io_process() {
 
         /* read switch */
         read_switch();
-        printf("MODE: %d\n", shmIOtoMainBuffer->mode);
         switch(shmIOtoMainBuffer->mode) {
             case PUT:
+                // if ((shmIOtoMainBuffer->request == true) && (kvs->request_done == false) && (kvs->num == MAX_KVS_NUMBER)) { // kvs is full
+                //     // lock
+                //     printf("BEFORE MERGE REQ\n");
+                //     // write on shmMerge
+                //     shm_merge->num = kvs->num;
+                //     for(i=0;i<MAX_KVS_NUMBER;i++){
+                //         shm_merge->keys[i] = kvs->keys[i];
+                //         strcpy(shm_merge->values[i], kvs->values[i]);
+                //     }
+                //     shm_merge->request = REQ_FLUSH;
+                //     // unlock
+                // }
+                //printf("put go\n");
                 put();
                 break;
             case GET:
@@ -529,13 +559,14 @@ void io_process() {
                 printf("get done\n");
                 break;
             case MERGE:
+                printf("merge mode\n");
                 break;
             default:
                 printf("somethings wrong!\n");
                 exit(0);
                 break;
         }
-        printf("sleep 150000\n");
+        printf("io sleep\n");
         usleep(150000); //sleep for 0.15s
         semop(sem_id, &v[READ], 1);
         semop(sem_id, &p[WRITE], 1);
