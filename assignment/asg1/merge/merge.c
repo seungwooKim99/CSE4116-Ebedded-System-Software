@@ -188,7 +188,6 @@ void merge_storage_tables(){
 
     /* merge two tables */
     storage_file merged;
-    merged.num = 0;
     memset(merged.keys, 0, sizeof(merged.keys)); // initialize
     for(i=0;i<2;i++) {
         printf("to merged :%d\n",i);
@@ -199,12 +198,12 @@ void merge_storage_tables(){
             printf("[%d] keys:%d\n",j,key);
             merged.keys[key] = key;
             strcpy(merged.values[key], targets[i].values[j]);
-            merged.num++;
         }
     }
 
     /* write */
     printf("now write\n");
+    int total_num = 0;
     char merged_filename[MAX_TABLE_NAME_SIZE] = {'\0',};
     sprintf(merged_filename, "./storage_table/%d.stt", merged_table_idx);
     fp = fopen(merged_filename, "w");
@@ -212,6 +211,7 @@ void merge_storage_tables(){
     for(i=0;i<MAX_KEY_VALUE;i++){
         if(merged.keys[i] == 0) continue;
         fprintf(fp,"%d %d %s", order++, merged.keys[i], merged.values[i]);
+        total_num++;
     }
     fclose(fp);
 
@@ -224,6 +224,14 @@ void merge_storage_tables(){
             printf("remove failed! : %s\n", remove_filename);
         }
     }
+
+    /* show result for 2s */
+    char merge_result_buf[LCD_MAX_BUFF] = {'\0'};
+    sprintf(merge_result_buf, "%d.stt %d", merged_table_idx, total_num);
+    write_motor(true);
+    write_lcd(merge_result_buf);
+    usleep(2000000); //2s
+    write_motor(false);
     return;
 }
 

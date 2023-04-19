@@ -78,7 +78,7 @@ void write_lcd();
 void read_switch();
 
 /* MOTOR */
-void write_motor();
+void write_motor(bool on);
 
 /* CONTROL_KEY */
 void read_control_key();

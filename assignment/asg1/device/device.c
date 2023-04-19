@@ -133,6 +133,17 @@ void read_switch() {
 }
 
 /* MOTOR */
+void write_motor(bool on) {
+    unsigned char retval;
+    unsigned char motor_state[3];
+    motor_state[0] = on ? 1 : 0;
+    motor_state[1] = 0; //direction
+    motor_state[2] = 10; //speed
+    if((retval = write(device_fds[MOTOR], motor_state, 3))) {
+        printf("motor write error\n");
+    }
+    return;
+}
 
 /* CONTROL_KEY (NON_BLOCK) */
 void read_control_key() {
