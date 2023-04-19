@@ -214,6 +214,17 @@ void merge_storage_tables(){
         fprintf(fp,"%d %d %s", order++, merged.keys[i], merged.values[i]);
     }
     fclose(fp);
+
+    /* remove old 2 tables */
+    int remove_res;
+    char remove_filename[MAX_TABLE_NAME_SIZE] = {'\0',};
+    for(i=0;i<2;i++){
+        sprintf(remove_filename, "./storage_table/%s", files[i]);
+        if ((remove_res = remove(remove_filename)) == -1) {
+            printf("remove failed! : %s\n", remove_filename);
+        }
+    }
+    return;
 }
 
 void merge_process() {
