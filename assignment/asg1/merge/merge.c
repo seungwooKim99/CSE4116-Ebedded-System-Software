@@ -38,11 +38,13 @@ int compare(const void *a, const void *b) {
 }
 
 int get_storage_table_number() {
+    mkdir("storage_table", 0755);
     /* storage table number in directory */
     struct dirent *ent;
-    DIR *dir = opendir ("./storage_table");
+    DIR *dir;
+    dir = opendir ("./storage_table");
     if (dir == NULL) {
-        printf("cannot open storage_table\n");
+        printf("cannot open storage_table!!\n");
         return 0;
     }
     int table_num = 0;
@@ -51,6 +53,7 @@ int get_storage_table_number() {
         if ((strcmp(".", ent->d_name) == 0) || (strcmp("..", ent->d_name) == 0)) continue;
         table_num++;
     }
+    closedir(dir);
     return table_num;
 }
 
@@ -74,6 +77,7 @@ int get_new_storage_table_index() {
         ptr = strtok(ent->d_name, ".");
         max_index = MAX(max_index, atoi(ptr));
     }
+    closedir(dir);
     return max_index+1;
 }
 
@@ -126,6 +130,7 @@ void get_table_names(char files[3][MAX_TABLE_NAME_SIZE]){
         printf("[[%s]]\n", ent->d_name);
         strcpy(files[idx++], ent->d_name);
     }
+    closedir(dir);
     return;
 }
 
@@ -228,6 +233,7 @@ void merge_storage_tables(){
     /* show result for 2s */
     char merge_result_buf[LCD_MAX_BUFF] = {'\0'};
     sprintf(merge_result_buf, "%d.stt %d", merged_table_idx, total_num);
+    printf("motor spin\n");
     write_motor(true);
     write_lcd(merge_result_buf);
     usleep(2000000); //2s
@@ -255,9 +261,11 @@ void merge_process() {
                     break;
                 }
             case REQ_MERGE:
-                printf("merge start (REQ_MERGE)\n");
-                merge_storage_tables();
-                shm_merge->request = REQ_NONE;
+                if (get_storage_table_number() >= 2) {
+                    /* merge possible if table is more then 2 */
+                    merge_storage_tables();
+                    shm_merge->request = REQ_NONE;
+                }
                 semop(sem_kvs_id, &v_kvs[0], 1);
                 break;
             default:

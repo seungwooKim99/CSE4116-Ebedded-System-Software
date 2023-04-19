@@ -139,7 +139,7 @@ void write_motor(bool on) {
     motor_state[0] = on ? 1 : 0;
     motor_state[1] = 0; //direction
     motor_state[2] = 10; //speed
-    if((retval = write(device_fds[MOTOR], motor_state, 3))) {
+    if((retval = write(device_fds[MOTOR], motor_state, 3)) < 0) {
         printf("motor write error\n");
     }
     return;
