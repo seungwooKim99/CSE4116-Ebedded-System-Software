@@ -15,4 +15,6 @@ typedef struct _stroage_file {
     char file_name[MAX_TABLE_NAME_SIZE];
 } storage_file;
 
+
+int compare_asc(const void *a, const void *b);
 #endif

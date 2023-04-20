@@ -12,11 +12,20 @@ typedef enum _request_mode { REQ_NONE, REQ_FLUSH, REQ_MERGE } request_mode;
 
 /* I/O -> main */
 typedef struct _shmIOtoMain {
+    /* request from IO to Main */
     ctl_mode mode;
     int key;
     char value[LCD_MAX_BUFF];
     int control_key;
     bool request;
+
+    /* resolved request from main */
+    int get_order;
+    int get_key;
+    char get_value[LCD_MAX_BUFF];
+
+    /* quit flag */
+    bool quit_program;
 } shmIOtoMain;
 shmIOtoMain *shmIOtoMainBuffer;
 int shmIOtoMain_id;
@@ -27,8 +36,6 @@ typedef struct _shmKVS {
     int num;
     int keys[MAX_KVS_NUMBER];
     char values[MAX_KVS_NUMBER][LCD_MAX_BUFF];
-    int get_request_idx;
-    bool request_done;
     bool is_full;
 } shmKVS;
 shmKVS *kvs;
@@ -65,4 +72,7 @@ struct sembuf p_kvs[SEM_NUMBER], v_kvs[SEM_NUMBER];
 /* function prototypes */
 void init_shared_memory();
 void init_semaphore();
+
+void free_shared_memory();
+void free_semaphore();
 #endif

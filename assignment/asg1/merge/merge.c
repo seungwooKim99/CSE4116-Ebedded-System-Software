@@ -1,31 +1,8 @@
 #include "../default.h"
 
-// int get_storage_table_info(){
-//     DIR *dir;
-//     struct dirent *ent;
-//     mkdir( "storage_table", 0755);
-//     dir = opendir ("./storage_table");
-//     if (dir != NULL) {
-//         /* print all the files and directories within directory */
-//         while ((ent = readdir (dir)) != NULL) {
-//             printf ("%s\n", ent->d_name);
-//             if (strcmp(".", ent->d_name) == 0) {
-//                 printf("its .\n");
-//             }
-//         }
-//         closedir (dir);
-//     } else {
-//          /* could not open directory */
-//          perror ("");
-//          printf("no open!\n");
-//         return EXIT_FAILURE;
-//     }
-//     return 0;
-// }
-
 /* util functions */
-int compare(const void *a, const void *b) {
-    /* compare filename (ex. 1.stt < 2.stt)*/
+int compare_asc(const void *a, const void *b) {
+    /* compare filename in ascending order (ex. 1.stt < 2.stt)*/
     int num_a = atoi(*(char**)a);
     int num_b = atoi(*(char**)b);
     if (num_a < num_b) {
@@ -37,6 +14,7 @@ int compare(const void *a, const void *b) {
     }
 }
 
+/* storage table operations */
 int get_storage_table_number() {
     mkdir("storage_table", 0755);
     /* storage table number in directory */
@@ -107,8 +85,6 @@ void flush_kvs() {
         kvs->keys[i] = 0;
         memset(kvs->values[i], 0, sizeof(kvs->values[i]));
     }
-    kvs->get_request_idx = -1;
-    kvs->request_done = false;
     kvs->is_full =false;
     return;
 }
@@ -154,7 +130,7 @@ void merge_storage_tables(){
     }
     
     printf("'sort table names\n'");
-    qsort(files, table_num, sizeof(char *), compare);
+    qsort(files, table_num, sizeof(char *), compare_asc);
 
     /* save past 2 tables info in structure */
     storage_file targets[2];
@@ -234,9 +210,10 @@ void merge_storage_tables(){
     char merge_result_buf[LCD_MAX_BUFF] = {'\0'};
     sprintf(merge_result_buf, "%d.stt %d", merged_table_idx, total_num);
     printf("motor spin\n");
+    usleep(500000);
     write_motor(true);
     write_lcd(merge_result_buf);
-    usleep(2000000); //2s
+    usleep(1000000); //1s
     write_motor(false);
     return;
 }
@@ -248,9 +225,10 @@ void merge_process() {
             case REQ_NONE:
                 break;
             case REQ_FLUSH:
+                printf("flush start\n");
                 create_new_storage_table_with_kvs();
                 flush_kvs();
-
+                
                 if (get_storage_table_number() == 3) {
                     /* have to merge */
                     printf("have to merge\n");

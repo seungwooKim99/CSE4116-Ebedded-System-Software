@@ -6,19 +6,7 @@ const char switch_keypad[][3] = {
     "PRS", "TUV", "WXY" 
 };
 
-/* util function */
-// int power(int x,int n)
-// {
-//    if(n==0)
-//      return 1;
-//    else if(n%2==0)
-//      return power(x*x,n/2);
-//    else
-//      return x*power(x*x,(n-1)/2);
-// }
-
-/* switch input */
-
+/* io_buf operations */
 void flush_buffer(bool is_key_buffer) {
     if (is_key_buffer){
         io_buf->key = 0;
@@ -43,7 +31,6 @@ bool is_buffer_empty(bool is_key_buffer) {
 }
 
 /* switch buffer operations */
-
 bool is_switch_pressed() {
     int i;
     for(i=0;i<SW_MAX_BUTTON;i++) {
@@ -184,15 +171,12 @@ switch_input_type get_switch_input_type() {
             return SINGLE;
         case 2:
             if (is_same_input(flush)){
-                printf("flush\n");
                 return FLUSH;
             }
             else if (is_same_input(change)){
-                printf("change\n");
                 return CHANGE;
             }
             else if (is_same_input(request)){
-                printf("request\n");
                 return REQUEST;
             }
             else
@@ -209,7 +193,6 @@ switch_input_type get_switch_input_type() {
 }
 
 /* mode */
-
 void get() {
     int i;
     bool is_key_input = true;
@@ -234,35 +217,32 @@ void get() {
                 unsigned char result_lcd_buf[LCD_MAX_BUFF] = {'\0'};
                 int idx = kvs->num - 1;
 
-                if (kvs->get_request_idx == -1){ // key not found
+                if (shmIOtoMainBuffer->get_order == -1){ // key not found
                     strcpy(result_lcd_buf, "Error");
                 } else {
-                    //result_lcd_string(result_lcd_buf);
-                    sprintf(result_lcd_buf, "(%d, %d, %s)", kvs->num, kvs->keys[idx], kvs->values[idx]);
-                    //sprintf(result_lcd_buf, "(1, 123, asd)");
+                    sprintf(result_lcd_buf, "(%d, %d, %s)", shmIOtoMainBuffer->get_order, shmIOtoMainBuffer->get_key, shmIOtoMainBuffer->get_value);
                 }
+                /* write result on lcd */
+                usleep(500000);
                 write_lcd(result_lcd_buf);
 
-                // /* stop toggle led */
+                /* stop toggle led */
                 stop_toggle_led();
                 is_led_toggling = false;
 
-                // /* all led on for 1s */
+                /* all led on for 1s */
                 *led_addr = 255;
                 usleep(1000000);
                 write_led(1);
 
-                // /* reset mode */
+                /* reset mode */
                 io_buf->input_mode = PENDING;
                 flush_all_devices();
-                printf("out\n");
             }
-            printf("switch\n");
             int num;
             int base = 1;
             switch(get_switch_input_type()) {
                 case NONE:
-                    printf("none\n");
                     break;
                 case SINGLE:
                     if ((num = get_number()) == 0){
@@ -299,57 +279,63 @@ void put(){
     int i;
     bool is_key_input;
     if(is_switch_pressed() && (io_buf->input_mode == PENDING)) {
-        printf("switch to key input mode\n");
+        /* start input key mode */
         io_buf->input_mode = KEY;
     }
 
     /* KVS is full */
     if(kvs->is_full) {
-        printf("FULL![IO]\n");
+        /* flush request to Merge process */
+        printf("flush\n");
         shm_merge->request = REQ_FLUSH;
+
+        /* copy KVS info */
         shm_merge->num = kvs->num;
         for(i=0;i<MAX_KVS_NUMBER;i++) {
             shm_merge->keys[i] = kvs->keys[i];
             strcpy(shm_merge->values[i], kvs->values[i]);
         }
+        /* Block I/O Process until FLUSH done */
         semop(sem_kvs_id, &p_kvs[0], 1);
-        printf("FULL RESOLVED[IO]\n");
         return;
     }
 
     /* if PUT Request done */
     if(shmIOtoMainBuffer->request) {
-        //kvs->request_done = false;
-        printf("PUT DONE\n");
-        shmIOtoMainBuffer->request = false; // PUT done
+        /* If shmIOtoMainBuffer->request has been true, Main process must succeeded Request.
+         * Thus, set request resolved (set false)
+         */
+        shmIOtoMainBuffer->request = false;
+
+        /* write the Put result on LCD */
         char result_lcd_buf[LCD_MAX_BUFF]= {'\0'};
         int idx = kvs->num - 1;
-        //result_lcd_string(result_lcd_buf);
         sprintf(result_lcd_buf, "(%d, %d, %s)", kvs->num, kvs->keys[idx], kvs->values[idx]);
-        //sprintf(result_lcd_buf, "(1, 221, ksw)");
         write_lcd(result_lcd_buf);
 
-        // /* stop toggle led */
+        /* stop toggle led */
         stop_toggle_led();
         is_led_toggling = false;
 
-        // /* all led on for 1s */
+        /* set all leds on for 1s */
         *led_addr = 255;
         usleep(1000000);
         write_led(1);
 
-        // /* reset mode */
+        /* set input_mode to PENDING */
         io_buf->input_mode = PENDING;
         flush_all_devices();
-        printf("out\n");
         return;
     }
 
+    /* input_mode (key input / value input / pending(waiting)) */
     switch(io_buf->input_mode) {
         case PENDING:
+            /* pending (waiting for input) */
             write_led(1);
             break;
         case KEY:
+            /* Key input started or working in progess */
             is_key_input = true;
             if (!is_led_toggling){
                 toggle_led(is_key_input); // create thread to toggle led concurrently
@@ -357,57 +343,51 @@ void put(){
             }
 
             int num;
+            /* switch input type (no input / character or number / special request key) */
             switch(get_switch_input_type()) {
-                case NONE:
+                case NONE: // got no input (waiting)
                     break;
-                case SINGLE:
+                case SINGLE: // got single input
                     if ((num = get_number()) == 0){
-                        printf("something's wrong!\n");
+                        printf("something's wrong!\n"); // number 0 means no input 
                         break;
                     }
-                    /* write on local memory buffer */
-                    
+
+                    /* write on local memory buffer */     
                     if (io_buf->key_digit == FND_MAX_DIGIT) {
                         io_buf->key = (io_buf->key / 10) * 10 + num;
                     } else {
                         io_buf->key = (io_buf->key)*10 + num;
                         io_buf->key_digit++;
                     }
-                    printf("num : %d/key: %d/:key_digit: %d\n", num, io_buf->key, io_buf->key_digit);
+
                     /* write on FND */
                     write_fnd(io_buf->key);
                     break;
                 case RESET: // change mode from KEY to VALUE
-                    if (!is_buffer_empty(is_key_input)) {
+                    if (!is_buffer_empty(is_key_input)) { // must write key first
                         io_buf->input_mode = VALUE;
                         stop_toggle_led();
                         is_led_toggling = false;
-                        break;
                     }
                     break;
-                case FLUSH:
+                case FLUSH: // got flush input
                     flush_buffer(is_key_input);
                     /* write on FND */
                     write_fnd(io_buf->key);
                     break;
                 case CHANGE: // character input not supported
                     break;
-                case REQUEST:
+                case REQUEST: // got PUT request input
                     // key, value buffer must be not empty
                     if (!is_buffer_empty(true) && !is_buffer_empty(false)) {
-                        // PUT request to main with IPC
-                        // for(i=0 ;i <FND_MAX_DIGIT;i++) {
-                        //     shmIOtoMainBuffer->key[i] = i;
-                        // }
+                        /* copy io_buf to shared memory */
                         shmIOtoMainBuffer->key = io_buf->key;
-                        //strcpy(shmIOtoMainBuffer->key, io_buf->key);
                         strcpy(shmIOtoMainBuffer->value, io_buf->value);
                         shmIOtoMainBuffer->request = true; // announce PUT request to main process
-                        printf("request go from IO\n");
                     }
                     break;
                 default:
-                    printf("default\n");
                     break;
             }
             break;
@@ -436,7 +416,7 @@ void put(){
                     break;
                 case RESET:
                     if (!is_buffer_empty(is_key_input)) {
-                        printf("chg mode\n");
+                        io_buf->number_value_enter = false; // set value_enter mode to character
                         io_buf->input_mode = KEY;
                         stop_toggle_led();
                         is_led_toggling = false;
@@ -453,16 +433,12 @@ void put(){
                 case REQUEST:
                     // key, value buffer must be not empty
                     if (!is_buffer_empty(true) && !is_buffer_empty(false)) {
-                        // PUT request to main with IPC
-                        //strcpy(shmIOtoMainBuffer->key, io_buf->key);
                         shmIOtoMainBuffer->key = io_buf->key;
                         strcpy(shmIOtoMainBuffer->value, io_buf->value);
                         shmIOtoMainBuffer->request = true; // announce PUT request to main process
-                        printf("request go from IO\n");
                     }
                     break;
                 default:
-                    printf("default\n");
                     break;
             }
             break;
@@ -511,24 +487,26 @@ void flush_all_devices() {
 }
 
 void io_process() {
-    int i;
     init_local_io_buffer();
     flush_all_devices();
+    bool quit = false;
     while(true) {
-        /* read key with non-block */
+        /* read key with non-block mode */
         read_control_key();
         if (ctl_buf[0].value == KEY_PRESS){
             // key pressed
-            //shmIOtoMainBuffer->control_key = ctl_buf[0].code;
-            // flush key, value
+            // flush key, value buffer and devices
+            if (is_led_toggling) {
+                is_led_toggling = false;
+                stop_toggle_led();
+            }
             flush_all_devices();
-
+            io_buf->input_mode = PENDING;
             switch(ctl_buf[0].code) {
                 case BACK:
                     // shut down the program
-                    exit(0);
-                    break;
-                case PROG:
+                    shmIOtoMainBuffer->quit_program = true;
+                    quit = true;
                     break;
                 case VOL_UP:
                     // change to next mode (PUT->GET->MERGE->PUT)
@@ -546,6 +524,13 @@ void io_process() {
                     break;
                 default:
                     break;
+            }
+            if (quit){
+                // break the loop
+                usleep(150000); //sleep for 0.15s
+                semop(sem_id, &v[READ], 1);
+                semop(sem_id, &p[WRITE], 1);
+                break;
             }
             continue;
         }
@@ -566,7 +551,6 @@ void io_process() {
                 exit(0);
                 break;
         }
-        printf("io sleep\n");
         usleep(150000); //sleep for 0.15s
         semop(sem_id, &v[READ], 1);
         semop(sem_id, &p[WRITE], 1);
