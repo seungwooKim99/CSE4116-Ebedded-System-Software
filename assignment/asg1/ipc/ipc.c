@@ -37,7 +37,6 @@ void init_shared_memory(){
         kvs->keys[i] = 0;
         memset(kvs->values[i], 0, sizeof(kvs->values[i]));
     }
-    //kvs->get_request_idx = -1;
     kvs->is_full = false;
 
     /* Merge */
@@ -55,7 +54,6 @@ void init_shared_memory(){
         shm_merge->keys[i] = 0;
         memset(shm_merge->values[i], 0, sizeof(shm_merge->values[i]));
     }
-
     return;
 }
 
@@ -92,7 +90,6 @@ void init_semaphore(){
         p_kvs[i].sem_op = -1;
         v_kvs[i].sem_op = 1;
     }
-
     return;
 }
 

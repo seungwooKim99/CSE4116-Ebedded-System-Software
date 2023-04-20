@@ -72,11 +72,13 @@ void *pthread_toggle_led(void *arg) {
 }
 
 void toggle_led(bool is_key_input) {
+    /* create thread */
     pthread_create((&toggle_tid),NULL,pthread_toggle_led,(void*)is_key_input);
     return;
 }
 
 void stop_toggle_led() {
+    /* kill thread */
     pthread_cancel(toggle_tid);
     return;
 }

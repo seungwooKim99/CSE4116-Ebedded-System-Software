@@ -71,7 +71,6 @@ void create_new_storage_table_with_kvs(){
     }
     int i;
     for(i=1;i<=shm_merge->num;i++){
-        printf("write %d\n", i);
         fprintf(fp, "%d %d %s\n", i, shm_merge->keys[i-1], shm_merge->values[i-1]);
     }
     fclose(fp);
@@ -103,7 +102,6 @@ void get_table_names(char files[3][MAX_TABLE_NAME_SIZE]){
     while((ent = readdir(dir)) != NULL) {
         // . or .. is not storage table
         if ((strcmp(".", ent->d_name) == 0) || (strcmp("..", ent->d_name) == 0)) continue;
-        printf("[[%s]]\n", ent->d_name);
         strcpy(files[idx++], ent->d_name);
     }
     closedir(dir);
@@ -112,24 +110,18 @@ void get_table_names(char files[3][MAX_TABLE_NAME_SIZE]){
 
 void merge_storage_tables(){
     int i, j;
-    printf("get new idx\n");
     int merged_table_idx = get_new_storage_table_index();
-    printf("get table num\n");
     int table_num = get_storage_table_number();
 
     /* get tables name */
     char files_arr[3][MAX_TABLE_NAME_SIZE] = {{'\0',},{'\0',},{'\0',}};
-    printf("'get table names\n'");
     get_table_names(files_arr);
     
-    printf("file[0] : %s, file[1]: %s\n", files_arr[0], files_arr[1]);
     /* sort by table name number (ex. 1.stt < 2.stt) */
     char *files[3];
     for (i = 0 ; i < 3 ; i ++) {
         files[i] = files_arr[i];
     }
-    
-    printf("'sort table names\n'");
     qsort(files, table_num, sizeof(char *), compare_asc);
 
     /* save past 2 tables info in structure */
@@ -139,7 +131,6 @@ void merge_storage_tables(){
     char read_buf[100];
     char *line, *word;
     for (i=0;i<2;i++){
-        printf("'read data'\n");
         char curr_filename[MAX_TABLE_NAME_SIZE] = {'\0',};
         sprintf(curr_filename, "./storage_table/%s", files[i]);
         fp = fopen(curr_filename, "r");
@@ -149,7 +140,6 @@ void merge_storage_tables(){
         }
         strcpy(targets[i].file_name, files[i]);
         while (!feof(fp)) {
-            printf("ok %d\n", i);
             int idx = targets[i].num;
             line = fgets(read_buf, 100, fp);
             if (!line) {
@@ -165,25 +155,19 @@ void merge_storage_tables(){
         fclose(fp);
     }
 
-    printf("scan two tables done\n");
-
     /* merge two tables */
     storage_file merged;
     memset(merged.keys, 0, sizeof(merged.keys)); // initialize
     for(i=0;i<2;i++) {
-        printf("to merged :%d\n",i);
         int num = targets[i].num;
-        printf("NUM: %d\n", num);
         for(j=0;j<num;j++){
             int key = targets[i].keys[j];
-            printf("[%d] keys:%d\n",j,key);
             merged.keys[key] = key;
             strcpy(merged.values[key], targets[i].values[j]);
         }
     }
 
     /* write */
-    printf("now write\n");
     int total_num = 0;
     char merged_filename[MAX_TABLE_NAME_SIZE] = {'\0',};
     sprintf(merged_filename, "./storage_table/%d.stt", merged_table_idx);
@@ -206,14 +190,13 @@ void merge_storage_tables(){
         }
     }
 
-    /* show result for 2s */
+    /* show result */
     char merge_result_buf[LCD_MAX_BUFF] = {'\0'};
     sprintf(merge_result_buf, "%d.stt %d", merged_table_idx, total_num);
-    printf("motor spin\n");
-    usleep(500000);
+    usleep(500000); //wait for 0.5s
     write_motor(true);
     write_lcd(merge_result_buf);
-    usleep(1000000); //1s
+    usleep(1000000); // show result for 1s
     write_motor(false);
     return;
 }
@@ -225,17 +208,15 @@ void merge_process() {
             case REQ_NONE:
                 break;
             case REQ_FLUSH:
-                printf("flush start\n");
                 create_new_storage_table_with_kvs();
                 flush_kvs();
                 
                 if (get_storage_table_number() == 3) {
-                    /* have to merge */
-                    printf("have to merge\n");
+                    /* merge required (table number == 3) */
                     shm_merge->request = REQ_MERGE;
                 } else {
                     shm_merge->request = REQ_NONE;
-                    semop(sem_kvs_id, &v_kvs[0], 1);
+                    semop(sem_kvs_id, &v_kvs[0], 1); //work done. unlock.
                     break;
                 }
             case REQ_MERGE:
@@ -244,7 +225,7 @@ void merge_process() {
                     merge_storage_tables();
                     shm_merge->request = REQ_NONE;
                 }
-                semop(sem_kvs_id, &v_kvs[0], 1);
+                semop(sem_kvs_id, &v_kvs[0], 1); //work done. unlock.
                 break;
             default:
                 break;

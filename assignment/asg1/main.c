@@ -3,8 +3,6 @@
 pid_t pid_io, pid_merge;
 
 int main(void) {
-    printf("hi\n");
-
     /* open and initialize devices */
     open_devices();
 
@@ -59,7 +57,6 @@ int main(void) {
     /* remove IPC */
     free_shared_memory();
     free_semaphore();
-    printf("main done\n");
     return 0;
 }
 
@@ -91,7 +88,6 @@ void resolve_get() {
         strcpy(shmIOtoMainBuffer->get_value, kvs->values[kvs_idx]);
         return;
     }
-    printf("not found in kvs\n");
 
     /* not found in KVS. search in storage tables */
     int table_num = get_storage_table_number();
@@ -113,7 +109,6 @@ void resolve_get() {
     for (i=0;i<table_num;i++){
         char curr_filename[MAX_TABLE_NAME_SIZE] = {'\0',};
         sprintf(curr_filename, "./storage_table/%s", files[i]);
-        printf("search : %s\n", curr_filename);
         fp = fopen(curr_filename, "r");
         if (!fp) {
             printf("file open error : %s\n", files[i]);
@@ -127,9 +122,8 @@ void resolve_get() {
             word = strtok(line, " "); // order of data
             tmp_order = atoi(word);
             word = strtok(NULL, " "); // key
-            printf("(req key : %d) / key : %d\n", requested_key, atoi(word));
             if (atoi(word) == requested_key) { // found the matching key
-                printf("found!\n");
+                memset(f_value, 0, LCD_MAX_BUFF);
                 f_order = tmp_order;
                 f_key = atoi(word);
                 word = strtok(NULL, " "); // value
@@ -142,11 +136,10 @@ void resolve_get() {
         fclose(fp);
     }
     /* if found the key */
-    printf("f_key: %d / requested_key : %d // %d", f_key, requested_key, f_key == requested_key);
     if (f_key == requested_key) {
         shmIOtoMainBuffer->get_order = f_order;
         shmIOtoMainBuffer->get_key = f_key;
-        f_value[strlen(f_value) - 1] = '\0';
+        if (f_value[strlen(f_value) - 1] == '\n') f_value[strlen(f_value) - 1] = '\0';
         strcpy(shmIOtoMainBuffer->get_value, f_value);
         return;
     }
@@ -156,12 +149,9 @@ void resolve_get() {
 
 int main_process() {
     /* if request arrived from I/O process */
-    printf("num: %d\n", kvs->num);
     bool quit_main = false;
     if (shmIOtoMainBuffer->quit_program) {
         /* quit the program */
-        printf("QUIT THE PROGRAM\n\n");
-        //free memory
         quit_main = true;
         return quit_main;
     }
@@ -170,7 +160,6 @@ int main_process() {
             case PUT:
                 if (kvs->num == MAX_KVS_NUMBER) {
                     // KVS is full. merge before PUT.
-                    printf("kvs is full\n");
                     kvs->is_full = true;
                     break;
                 }

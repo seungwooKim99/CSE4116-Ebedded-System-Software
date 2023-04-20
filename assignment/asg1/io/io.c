@@ -95,7 +95,7 @@ bool is_same_char_btn_pressed() {
     return false;
 }
 
-unsigned char set_character() {
+void set_character() {
     int i, j;
     unsigned char ch;
     int latest_idx;
@@ -107,7 +107,7 @@ unsigned char set_character() {
     }
     if (i == SW_MAX_BUTTON) {
         printf("something's wrong!\n");
-        return false;
+        return;
     }
 
     if (is_same_char_btn_pressed()) {
@@ -197,7 +197,6 @@ void get() {
     int i;
     bool is_key_input = true;
     if(is_switch_pressed() && (io_buf->input_mode == PENDING)) {
-        printf("switch to key input mode\n");
         io_buf->input_mode = KEY;
     }
 
@@ -286,7 +285,6 @@ void put(){
     /* KVS is full */
     if(kvs->is_full) {
         /* flush request to Merge process */
-        printf("flush\n");
         shm_merge->request = REQ_FLUSH;
 
         /* copy KVS info */
@@ -507,6 +505,15 @@ void io_process() {
                     // shut down the program
                     shmIOtoMainBuffer->quit_program = true;
                     quit = true;
+
+                    // clear devices
+                    if (is_led_toggling) {
+                        is_led_toggling = false;
+                        stop_toggle_led();
+                    }
+                    flush_all_devices();
+                    usleep(150000);
+                    write_led(0);
                     break;
                 case VOL_UP:
                     // change to next mode (PUT->GET->MERGE->PUT)

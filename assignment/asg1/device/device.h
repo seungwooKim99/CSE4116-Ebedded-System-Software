@@ -62,17 +62,19 @@ int device_fds[MAX_DEVICE_NUMBER];
 
 /* function prototypes */
 void open_devices();
-void init_devices();
 
 /* LED (mmap)*/
 pthread_t toggle_tid;
 void write_led();
+void *pthread_toggle_led(void *arg);
+void toggle_led(bool is_key_input);
+void stop_toggle_led();
 
 /* FND */
-void write_fnd();
+void write_fnd(int num);
 
 /* LCD */
-void write_lcd();
+void write_lcd(char *buf);
 
 /* SWITCH */
 void read_switch();
