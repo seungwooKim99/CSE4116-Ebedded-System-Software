@@ -7,6 +7,7 @@
 #include <linux/slab.h>
 #include <linux/platform_device.h>
 #include <linux/delay.h>
+#include <linux/ioctl.h>
 
 #include <asm/io.h>
 #include <asm/uaccess.h>

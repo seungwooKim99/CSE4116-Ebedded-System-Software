@@ -6,9 +6,11 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdbool.h>
+#include <linux/ioctl.h>
 
 #define MAX_DIGIT 4
 #define TIMER_DEVICE "/dev/dev_driver"
+#define DEVICE_MAJOR_NUMBER 242
 
 struct argument {
     int timer_interval; // 1 ~ 100
@@ -16,6 +18,12 @@ struct argument {
     int timer_init; // 0001 ~ 8000
     int start_idx;
 };
+
+/* Set option of the device driver */
+#define SET_OPTION _IOW(DEVICE_MAJOR_NUMBER, 0, struct argument *)
+/* Command of the device driver */
+#define COMMAND _IO(DEVICE_MAJOR_NUMBER, 1)
+
 
 void print_error(char *msg) {
     printf("[Error] %s\n", msg);
@@ -78,6 +86,15 @@ int main(int argc, char **argv){
     arg.timer_init = atoi(argv[3]);
 
     printf("%d/%d/%d/start_idx:%d\n", arg.timer_interval, arg.timer_cnt, arg.timer_init, arg.start_idx);
-    
+
+    /* open timer device */
+    int fd = open(TIMER_DEVICE, O_WRONLY);
+
+    /* ioctl to device driver */
+    ioctl(fd, SET_OPTION, &arg);
+    ioctl(fd, COMMAND);
+
+    /* close device file */
+    close(fd);
     return 0;
 }
