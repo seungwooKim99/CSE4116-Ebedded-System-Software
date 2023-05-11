@@ -80,6 +80,10 @@ static long device_ioctl(struct file *file, unsigned int ioctl_num, unsigned lon
             pr_info("Got SET_OPTION : %d\n", ioctl_num);
             copy_from_user(&arg, (struct argument __user *)ioctl_param, sizeof(struct argument));
             pr_info("got arg : %d/%d/%d/%d\n", arg.timer_interval, arg.timer_cnt, arg.timer_init, arg.start_idx);
+
+            initialize_timer();
+            start_timer(arg);
+
             break;
         case COMMAND:
             /* start timer */
