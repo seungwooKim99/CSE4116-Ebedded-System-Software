@@ -12,3 +12,10 @@
 
 # unignore makefile
 !Makefile
+
+# ignore .tar, .cmd
+*.tar
+*.cmd
+
+# ignore ref/
+ref/
