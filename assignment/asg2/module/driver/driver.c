@@ -1,10 +1,4 @@
 #include "../default.h"
-
-/* Prototypes - this would normally go in a .h file */
-static int device_open(struct inode *, struct file *);
-static int device_release(struct inode *, struct file *);
-static long device_ioctl(struct file *file, unsigned int ioctl_num, unsigned long ioctl_param);
-
 struct argument arg;
 
 /* Global variables are declared as static, so are global within the file. */
@@ -40,6 +34,12 @@ static int __init dev_driver_init(void)
 
 static void __exit dev_driver_exit(void)
 {
+    /* iounmap */
+    iom_fpga_unmap();
+
+    /* delete timer */
+    delete_timer();
+
     device_destroy(cls, MKDEV(DEVICE_MAJOR_NUMBER, 0));
     class_destroy(cls);
     /* Unregister the device */
@@ -47,15 +47,11 @@ static void __exit dev_driver_exit(void)
     pr_info("Exit device on /dev/%s\n", DEVICE_NAME);
 }
 
-/* Methods */
-/* Called when a process tries to open the device file, like
-* "sudo cat /dev/chardev"
-*/
 static int device_open(struct inode *inode, struct file *file)
 {
     if (atomic_cmpxchg(&already_open, CDEV_NOT_USED, CDEV_EXCLUSIVE_OPEN))
         return -EBUSY;
-    printk(KERN_INFO "hello\n");
+    printk(KERN_INFO "Device open\n");
     try_module_get(THIS_MODULE);
     return SUCCESS;
 }
@@ -63,13 +59,10 @@ static int device_open(struct inode *inode, struct file *file)
 /* Called when a process closes the device file. */
 static int device_release(struct inode *inode, struct file *file)
 {
-    /* We're now ready for our next caller */
+    /* ready for next caller */
     atomic_set(&already_open, CDEV_NOT_USED);
-    /* Decrement the usage count, or else once you opened the file, you will
-    * never get rid of the module.
-    */
     module_put(THIS_MODULE);
-    printk(KERN_INFO "Goodbye\n");
+    printk(KERN_INFO "Device release\n");
     return SUCCESS;
 }
 
@@ -77,17 +70,13 @@ static long device_ioctl(struct file *file, unsigned int ioctl_num, unsigned lon
     switch(ioctl_num) {
         case SET_OPTION:
             /* Set parameter */
-            pr_info("Got SET_OPTION : %d\n", ioctl_num);
             copy_from_user(&arg, (struct argument __user *)ioctl_param, sizeof(struct argument));
-            pr_info("got arg : %d/%d/%d/%d\n", arg.timer_interval, arg.timer_cnt, arg.timer_init, arg.start_idx);
-
-            initialize_timer();
-            start_timer(arg);
-
+            initialize_timer(arg);
+            iom_fpga_init();
             break;
         case COMMAND:
             /* start timer */
-            pr_info("Got COMMAND : %d\n", ioctl_num);
+            start_timer();
             break;
         default:
             pr_alert("Invalid ioctl_num : %d\n", ioctl_num);

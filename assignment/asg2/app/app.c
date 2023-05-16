@@ -85,8 +85,6 @@ int main(int argc, char **argv){
     }
     arg.timer_init = atoi(argv[3]);
 
-    printf("%d/%d/%d/start_idx:%d\n", arg.timer_interval, arg.timer_cnt, arg.timer_init, arg.start_idx);
-
     /* open timer device */
     int fd = open(TIMER_DEVICE, O_WRONLY);
 

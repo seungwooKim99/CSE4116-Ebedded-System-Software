@@ -11,7 +11,7 @@ struct argument {
     int timer_interval; // 1 ~ 100
     int timer_cnt; // 1 ~ 100
     int timer_init; // 0001 ~ 8000
-    int start_idx;
+    int start_idx; // 0 ~ 3
 };
 
 /* Set option of the device driver */
@@ -21,4 +21,8 @@ struct argument {
 
 #define SUCCESS 0 // return value
 
+/* function prototypes */
+static int device_open(struct inode *, struct file *);
+static int device_release(struct inode *, struct file *);
+static long device_ioctl(struct file *file, unsigned int ioctl_num, unsigned long ioctl_param);
 #endif
