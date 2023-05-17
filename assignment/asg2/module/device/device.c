@@ -79,20 +79,39 @@ int iom_fpga_text_lcd_write(int shift_num){
     unsigned char string[33] = {'\0',};;
     id_len = strlen(my_id);
     name_len = strlen(my_name);
+
+    int line1_len, line2_len;
+    line1_len = LINE_BUFF - id_len;
+    line2_len = LINE_BUFF - name_len;
+
     if (shift_num == -1) {
         /* Flush lcd */
         memset(string, ' ', MAX_BUFF);
     } else {
-        shift_num %= LINE_BUFF;
         /* Line 1*/
         memset(my_id + id_len, ' ', LINE_BUFF - id_len);
-        strncat(string, my_id + LINE_BUFF - shift_num, shift_num);
-        strncat(string + shift_num, my_id, LINE_BUFF - shift_num);
+        if ((shift_num / line1_len) % 2 == 0){
+            /* to right */
+            memset(string, ' ', shift_num % line1_len);
+            strncat(string, my_id, LINE_BUFF - (shift_num % line1_len));
+        } else {
+            /* to left */
+            memset(string, ' ', line1_len - (shift_num % line1_len));
+            strncat(string, my_id, LINE_BUFF - line1_len + (shift_num % line1_len));
+        }
+
         
         /* Line 2 */
         memset(my_name + name_len, ' ', LINE_BUFF - name_len);
-        strncat(string + LINE_BUFF, my_name + LINE_BUFF - shift_num, shift_num);
-        strncat(string + LINE_BUFF + shift_num, my_name, LINE_BUFF - shift_num);
+        if ((shift_num / line2_len) % 2 == 0){
+            /* to right */
+            memset(string + LINE_BUFF, ' ', shift_num % line2_len);
+            strncat(string + LINE_BUFF, my_name, LINE_BUFF - (shift_num % line2_len));
+        } else {
+            /* to left */
+            memset(string + LINE_BUFF, ' ', line2_len - (shift_num % line2_len));
+            strncat(string + LINE_BUFF, my_name, LINE_BUFF - line2_len + (shift_num % line2_len));
+        }
     }
     string[MAX_BUFF] = '\0';
     for(i=0;i<MAX_BUFF;i++){
