@@ -172,4 +172,4 @@ static void __exit inter_exit(void) {
 
 module_init(inter_init);
 module_exit(inter_exit);
-	MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPL");
