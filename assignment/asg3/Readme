@@ -1,0 +1,25 @@
+# device info
+major number : 242
+device file : /dev/stopwatch
+
+# compile module and test app (Host side)
+cd app
+make
+make push
+cd ../module
+make
+make push
+
+# change log level (Target side)
+echo "7 6 1 7" > /proc/sys/kernel/printk
+
+# insert module (Target side)
+insmod stopwatch.ko
+
+# start app (Target side)
+./app
+
+# delete module (Taget side)
+rmmod stopwatch
+
+- made by 20181610 Seungwoo Kim

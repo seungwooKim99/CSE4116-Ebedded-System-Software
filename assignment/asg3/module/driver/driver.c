@@ -1,4 +1,5 @@
 #include "../default.h"
+
 /* Global variables are declared as static, so are global within the file. */
 enum {
     CDEV_NOT_USED = 0,
@@ -7,10 +8,6 @@ enum {
 
 /* Is device open? Used to prevent multiple access to device */
 static atomic_t already_open = ATOMIC_INIT(CDEV_NOT_USED);
-
-// /* wait queue head for for sleeping process */
-// wait_queue_head_t waitq;
-// DECLARE_WAIT_QUEUE_HEAD(waitq);
 
 static struct class *cls;
 static struct file_operations dev_driver_fops = {
@@ -36,12 +33,6 @@ static int __init dev_driver_init(void)
 
 static void __exit dev_driver_exit(void)
 {
-    /* iounmap */
-    iom_fpga_unmap();
-
-    // /* delete timer */
-    // delete_timer();
-
     device_destroy(cls, MKDEV(DEVICE_MAJOR_NUMBER, 0));
     class_destroy(cls);
 
@@ -75,10 +66,17 @@ static int device_open(struct inode *inode, struct file *file)
 /* Called when a process closes the device file. */
 static int device_release(struct inode *inode, struct file *file)
 {
+    /* delete timers */
     delete_all_timers();
-    inter_release();
-    iom_fpga_unmap();
+
+    /* flush fnd to 0000 */
     iom_fpga_fnd_write(0,0);
+
+    /* free irqs */
+    inter_release();
+
+    /* unmap fnd */
+    iom_fpga_unmap();
 
     /* ready for next caller */
     atomic_set(&already_open, CDEV_NOT_USED);
@@ -90,7 +88,6 @@ static int device_release(struct inode *inode, struct file *file)
 static ssize_t device_write(struct file *filp, const char __user *buff, size_t len, loff_t *off)
 {
     /* sleep user process */
-    //wait_event_interruptible(waitq, 0); // sleep
     sleep_user();
     return SUCCESS;
 }

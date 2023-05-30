@@ -1,8 +1,6 @@
 #ifndef DEVICE_HEADER_INCLUDE
 #define DEVICE_HEADER_INCLUDE
 
-#define FPGA_DEVICE_NUMBER 4
-
 #define IOM_FND_ADDRESS 0x08000004 // pysical address
 
 /* function prototypes */

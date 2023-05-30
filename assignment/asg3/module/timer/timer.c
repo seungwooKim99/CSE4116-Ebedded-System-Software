@@ -5,44 +5,33 @@ struct timer_list timer;
 TIMER_STATE curr_state; // stopwatch's state
 unsigned long base_time; // jiffies of start time (00:00)
 bool base_time_set; // flag for base_time setting
-TIMER_MODE mode; // last pressed button
+TIMER_MODE mode; // last pressed button(current timer mode)
 int fnd_out_second; //variable to display on FND
 
-/* terminate timer */
+/* timer to check if VOL- is pressed for 3 seconds */
 struct timer_list terminate_timer;
-bool is_voldown_pressed;
-bool is_terminate_timer_init_done = false;
+bool is_voldown_pressed; // flag for VOL- status(pressed / released)
 
+ /* bottomhalf for printing out on FND */
 static void bottomhalf_tasklet_fnd_out_fn(unsigned long unused) {
     fnd_out_second++;
-    /* print out on FND */
-    iom_fpga_fnd_write(fnd_out_second / 60, fnd_out_second % 60);
+    iom_fpga_fnd_write(fnd_out_second % MAX_TIME_IN_SEC / 60, fnd_out_second % MAX_TIME_IN_SEC % 60);
 }
 
+/* bottomhalf wakeing user app up */
 static void bottomhalf_tasklet_terminate_fn(unsigned long unused) {
-    // /* release interrupts */
-    // inter_release();
-
-    // /* delete timers */
-    // del_timer(&timer);
-    // del_timer(&terminate_timer);
-
-    /* wake up user app */
-    // wake_up_interruptible(waitq);
-    printk("wake user up\n");
     wakeup_user();
 }
 
+/* declare tasklets */
 DECLARE_TASKLET(fnd_out_task, bottomhalf_tasklet_fnd_out_fn, 0L);
 DECLARE_TASKLET(terminate_task, bottomhalf_tasklet_terminate_fn, 0L);
 
 
 void initialize_timer(void) {
+    /* init timers */
     init_timer(&timer);
-    if (!is_terminate_timer_init_done) {
-        is_terminate_timer_init_done = true;
-        init_timer(&terminate_timer);
-    }
+    init_timer(&terminate_timer);
 
     /* flush fnd */
     iom_fpga_fnd_write(0, 0);
@@ -97,7 +86,7 @@ void timer_handler(unsigned long data) {
     state->last_called = curr_time; //update last call time to current time
     state->elapsed_total_time = curr_time - base_time; //update total elapsed time
 
-    /* if 1 second elapsed from "state->curr_sec" */
+    /* check if 1 second elapsed from "state->curr_sec" */
     if(state->curr_sec < (int)(state->elapsed_total_time - state->elapsed_pause_time) / HZ) {
         /* FND count up required (1 second elapsed) */
         state->curr_sec = (int)(state->elapsed_total_time - state->elapsed_pause_time) / HZ;
@@ -105,10 +94,9 @@ void timer_handler(unsigned long data) {
         tasklet_hi_schedule(&fnd_out_task);
     }
 
+    /* add timer again */
     timer.data = (unsigned long)&curr_state;
     timer.function = timer_handler;
-
-    /* add timer again */
     add_timer(&timer);
     return;
 }
@@ -122,7 +110,7 @@ void pause_timer(void) {
 
     /* delete timer */
     del_timer(&timer);
-    curr_state.last_paused = curr_state.last_called; // update last_paused time
+    curr_state.last_paused = curr_state.last_called; // update last_paused time to last_called time
 }
 
 void reset_timer(void) {
@@ -140,13 +128,18 @@ void reset_timer(void) {
 
 void kill_timer(int value) {
     if (value == PRESSED) {
+        /* try terminate stopwatch */
         is_voldown_pressed = true;
+
         /* start terminate timer */
         terminate_timer.expires = get_jiffies_64() + 3 * HZ; // start timer after 3 seconds
         terminate_timer.data = (unsigned long)&curr_state;
         terminate_timer.function = terminate_timer_handler;
 
+        /* add terminate timer */
+        add_timer(&terminate_timer);
     } else {
+        /* cancel terminating stopwatch */
         is_voldown_pressed = false;
         del_timer(&terminate_timer);
     }
@@ -158,7 +151,6 @@ void terminate_timer_handler(unsigned long data){
         return;
     }
     /* terminate stopwatch */
-    printk("terminate stopwatch\n");
     tasklet_hi_schedule(&terminate_task);
 }
 
@@ -166,13 +158,3 @@ void delete_all_timers(void) {
     del_timer(&terminate_timer);
     del_timer(&timer);
 }
-
-
-// //util functions
-// int get_minute(TIMER_STATE state) {
-//     return (int)(state.elapsed_total_time - state.elapsed_pause_time) / HZ % MAX_TIME_IN_SEC / 60;
-// }
-
-// int get_second(TIMER_STATE state) {
-//     return (int)(state.elapsed_total_time - state.elapsed_pause_time) / HZ % MAX_TIME_IN_SEC % 60;
-// }

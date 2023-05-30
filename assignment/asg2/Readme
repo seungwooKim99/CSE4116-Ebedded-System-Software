@@ -1,0 +1,22 @@
+# device info
+major number : 242
+device file : /dev/dev_driver
+
+# compile module and test app (Host side)
+cd app
+make
+make push
+cd ../module
+make
+make push
+
+# insert module (Target side)
+insmod dev_driver.ko
+
+# start app (Target side)
+./app TIMER_INTERVAL[1-100] TIMER_CNT[1-100] TIMER_INIT[0001-8000]
+
+# delete module (Taget side)
+rmmod dev_driver
+
+- made by 20181610 Seungwoo Kim
