@@ -54,15 +54,11 @@ static int device_open(struct inode *inode, struct file *file)
     /* iomap fpga fnd device */
     iom_fpga_init();
 
-    /* register interrupts */
-    //register_interrupt();
-
     /* init timer */
-    //initialize_timer();
     initialize_password_timer();
 
     /* flush fnd */
-    //iom_fpga_fnd_write(0, 0);
+    iom_fpga_fnd_write(0);
 
     try_module_get(THIS_MODULE);
     return SUCCESS;
@@ -71,14 +67,9 @@ static int device_open(struct inode *inode, struct file *file)
 /* Called when a process closes the device file. */
 static int device_release(struct inode *inode, struct file *file)
 {
-    /* delete timers */
-    //delete_all_timers();
-
     /* flush fnd to 0000 */
-    //iom_fpga_fnd_write(0,0);
+    iom_fpga_fnd_write(0);
 
-    /* free irqs */
-    //inter_release();
 
     /* unmap fnd */
     iom_fpga_unmap();
@@ -90,18 +81,10 @@ static int device_release(struct inode *inode, struct file *file)
     return SUCCESS;
 }
 
-// static ssize_t device_write(struct file *filp, const char __user *buff, size_t len, loff_t *off)
-// {
-//     /* sleep user process */
-//     sleep_user();
-//     return SUCCESS;
-// }
-
 static long device_ioctl(struct file *file, unsigned int ioctl_num, unsigned long ioctl_param) {
     switch(ioctl_num) {
         case ENTER_PASSWORD:
             /* start enter password */
-            // start timer for 
             pr_alert("[module] ioctl enter password\n");
             start_password_timer();
             put_user(get_password(), (int __user *)ioctl_param);

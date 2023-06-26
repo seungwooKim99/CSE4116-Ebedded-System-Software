@@ -87,7 +87,8 @@ void start_session_timer(void){
     sleep_user();
 }
 
-void delete_session_timer(void) { 
+void delete_session_timer(void) {
+    iom_fpga_fnd_write(0);
     del_timer(&session_timer);
 }
 

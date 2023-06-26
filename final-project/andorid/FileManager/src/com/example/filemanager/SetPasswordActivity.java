@@ -34,7 +34,6 @@ public class SetPasswordActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		Log.d("test", "SetPasswordActivity onCreate");
 		setContentView(R.layout.activity_set_password);
 		
 		Intent intent = new Intent(SetPasswordActivity.this, PasswordService.class);
@@ -55,7 +54,6 @@ public class SetPasswordActivity extends Activity {
 		save_pw_btn.setOnClickListener(new Button.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Log.d("test", "save clicked");
 				if(!isService) return;
 				if(passwordService.trySavePassword()){
 					unbindService(conn);

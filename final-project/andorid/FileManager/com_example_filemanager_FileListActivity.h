@@ -39,6 +39,14 @@ JNIEXPORT jboolean JNICALL Java_com_example_filemanager_FileListActivity_deleteF
 JNIEXPORT jboolean JNICALL Java_com_example_filemanager_FileListActivity_startSession
   (JNIEnv *, jobject, jint);
 
+/*
+ * Class:     com_example_filemanager_FileListActivity
+ * Method:    removeSession
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_example_filemanager_FileListActivity_removeSession
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

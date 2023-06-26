@@ -13,9 +13,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
-
-import com.example.filemanager.PasswordService.BackThread;
 
 public class FileListActivity extends Activity {
 	public static int SESSION_SEC = 180;
@@ -34,10 +33,8 @@ public class FileListActivity extends Activity {
 	/* inner class */
 	class SessionThread extends Thread {
 		public void run() {
-			Log.d("test", "Session Thread start");
 			 if(startSession(SESSION_SEC)){
 				 /*TODO : kill the app */
-				 Toast.makeText(getApplicationContext(), "Session 만료", Toast.LENGTH_LONG).show();
 				 Intent intent = new Intent(FileListActivity.this, MainActivity.class);
                  intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                  startActivity(intent);
@@ -72,10 +69,34 @@ public class FileListActivity extends Activity {
     	super.onStart();
 	    	verticalLayout = (LinearLayout)findViewById(R.id.verticalLayout);
 	    	verticalLayout.removeAllViews();
+	    	/* add cwd */
+	    	TextView cwdTextView = new TextView(this);
+	    	cwdTextView.setText("Current Directory: " + cwd);
+	    	cwdTextView.setBackgroundColor(Color.LTGRAY);
+	    	cwdTextView.setTextSize(20);
+	    	LinearLayout.LayoutParams cwdTextViewParams = new LinearLayout.LayoutParams(
+	    	        LinearLayout.LayoutParams.MATCH_PARENT,
+	    	        LinearLayout.LayoutParams.WRAP_CONTENT
+	    	);
+	    	verticalLayout.addView(cwdTextView, cwdTextViewParams);
+	    	
+	    	/* add files */
 	        List<File> files = fetchFiles(cwd);
 	        for (File file : files) {
 	        	addFileComponent(file);
 	        }
+    }
+    
+    @Override
+    protected void onDestroy(){
+    	super.onDestroy();
+    	if (cwd.equals("/")) {
+    		/* if you exit root directory, remove session */
+    		if (thread != null) {
+    			thread.interrupt();
+    			thread = null;
+            }
+    	}
     }
        
     private void addFileComponent(final File file) {

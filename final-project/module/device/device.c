@@ -26,7 +26,6 @@ int iom_fpga_unmap(void) {
 }
 
 int iom_fpga_fnd_write(int value) {
-    pr_alert("fnd write :%d\n", value);
     unsigned short int value_short = 0;
     value_short |= (value / 1000) << 12;
     value_short |= (value % 1000 / 100) << 8;

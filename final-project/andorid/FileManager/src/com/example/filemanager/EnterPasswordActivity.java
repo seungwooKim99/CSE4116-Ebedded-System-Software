@@ -55,7 +55,6 @@ public class EnterPasswordActivity extends Activity {
 		 try_login_btn.setOnClickListener(new Button.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Log.d("test", "save clicked");
 				if(!isService) return;
 				if(passwordService.tryLogin()){
 					unbindService(conn);
@@ -64,7 +63,6 @@ public class EnterPasswordActivity extends Activity {
 					startActivity(intent);
 					finish();
 				} else {
-					// Trial--
 					Log.d("test", "Login Failed");
 				}
 			}

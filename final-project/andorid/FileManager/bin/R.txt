@@ -233,6 +233,7 @@ int drawable abc_textfield_searchview_holo_light 0x7f020054
 int drawable abc_textfield_searchview_right_holo_dark 0x7f020055
 int drawable abc_textfield_searchview_right_holo_light 0x7f020056
 int drawable ic_launcher 0x7f020057
+int drawable main_logo 0x7f020058
 int id TextView01 0x7f05003e
 int id action_bar 0x7f05001c
 int id action_bar_activity_content 0x7f050015
@@ -248,8 +249,7 @@ int id action_mode_close_button 0x7f050024
 int id activity_chooser_view_content 0x7f050025
 int id always 0x7f05000b
 int id beginning 0x7f050011
-int id button1 0x7f050044
-int id button_login 0x7f050045
+int id button_login 0x7f050044
 int id checkbox 0x7f05002d
 int id collapseActionView 0x7f05000d
 int id default_activity_button 0x7f050028
@@ -268,6 +268,7 @@ int id homeAsUp 0x7f050005
 int id icon 0x7f05002a
 int id ifRoom 0x7f05000a
 int id image 0x7f050027
+int id imageView1 0x7f050045
 int id listMode 0x7f050001
 int id list_item 0x7f050029
 int id middle 0x7f050012

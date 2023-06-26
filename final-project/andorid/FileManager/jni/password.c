@@ -2,6 +2,7 @@
 #define HASHED_PW_FILE "/sdcard/hashed-password"
 #define ENTER_PASSWORD _IOR(DEVICE_MAJOR_NUMBER, 0, int *)
 #define HASH_SIZE 100
+#define HASH_KEY 31
 int hash(int number);
 
 extern bool passwordExist();
@@ -23,7 +24,6 @@ int enterAndGetPassword() {
 	int fd = open(DEVICE_NAME_PATH, O_RDWR);
 	int pw[1];
 	ioctl(fd, ENTER_PASSWORD, pw);
-	LOGV("ioctl done : %d", pw[0]);
 	close(fd);
 	return pw[0];
 }
@@ -63,6 +63,14 @@ bool comparePassword(int password) {
 
 /* for hashing password */
 int hash(int number) {
-	// have to modify!
-	return number;
+	char pw[5];
+	sprintf(pw, "%d", number);
+	int hash = 0;
+	int i = 0;
+	while (pw[i] != '\0') {
+        hash += pw[i];
+        hash %= 31; // 소수인 31로 나머지 연산
+        i++;
+	}
+	return hash;
 }

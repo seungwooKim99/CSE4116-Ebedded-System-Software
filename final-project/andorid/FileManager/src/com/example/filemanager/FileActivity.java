@@ -20,7 +20,6 @@ public class FileActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_file);
 
-		Log.d("test", "File Activity!");
         editText = (EditText) findViewById(R.id.fileEditText);
         
         Intent intent = getIntent();
@@ -28,7 +27,6 @@ public class FileActivity extends Activity {
         	filePath = intent.getStringExtra("filePath");
         	mode = intent.getStringExtra("mode");
         }
-        Log.d("test", "textView ok");
 	}
 	
 	@Override
@@ -45,7 +43,6 @@ public class FileActivity extends Activity {
 	    		editText.setLongClickable(false);
 	    	}
 	    } else {
-	      	Log.d("test", "WRONG");
 	      	editText.setFocusable(false);
 	      	editText.setText("Failed to read file: " + filePath);
 	    }
